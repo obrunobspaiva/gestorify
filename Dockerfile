@@ -20,6 +20,24 @@ CMD ["node", "server.js"]
 FROM nginx:latest
 COPY --from=frontend /app/dist /usr/share/nginx/html
 COPY --from=backend /app/server /server
-COPY ./nginx.conf /etc/nginx/nginx.conf
+
+# 🔹 Criando um nginx.conf direto no contêiner
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html; \
+        try_files $uri /index.html; \
+    } \
+    location /api/ { \
+        proxy_pass http://localhost:5000/; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade $http_upgrade; \
+        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Host $host; \
+        proxy_cache_bypass $http_upgrade; \
+    } \
+}' > /etc/nginx/nginx.conf
+
 EXPOSE 80 5000
 CMD ["nginx", "-g", "daemon off;"]
